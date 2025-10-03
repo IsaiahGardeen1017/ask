@@ -18,8 +18,7 @@ export async function askGeminiWithRetry(query: string, allowPrintOutput = true)
         if (err instanceof Gemini503Error) {
           num503s++;
         } else {
-          console.log("FATAL ERROR");
-          console.error(err);
+          throw new Error('FATAL ERROR');
         }
       }
     }
@@ -106,10 +105,10 @@ export async function askGemini(query: string): Promise<string> {
   }
 }
 
-export async function askGeminiImage(query: string): Promise<string> {
+export async function askGeminiImage(query: string): Promise<any> {
   const API_KEY = GEMINI_API_KEY;
   const API_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
 
   if (!API_KEY) {
     throw new Error("GEMINI_API_KEY environment variable is not set.");
@@ -122,15 +121,6 @@ export async function askGeminiImage(query: string): Promise<string> {
       "x-goog-api-key": API_KEY,
     },
     body: JSON.stringify({
-      system_instruction: {
-        parts: [{
-          text: `
-                    You're Role: You are being used in a cli tool for simple queries a developer may have when in the terminal, for this reason do not give overly long answers. 
-                    Use judgment, If the user is asking for simple commands give them the command with maybe one line of explanation
-                    Some answers may need a long answer and explanation and that is fine.
-                    `,
-        }],
-      },
       contents: [{
         parts: [{ text: query }],
       }],
@@ -138,6 +128,10 @@ export async function askGeminiImage(query: string): Promise<string> {
         thinkingConfig: {
           thinkingBudget: 0,
         },
+        imageConfig: {
+          aspectRatio: "1:1"
+
+        }
       },
     }),
   });
@@ -155,13 +149,7 @@ export async function askGeminiImage(query: string): Promise<string> {
   }
 
   const data = await response.json();
-  const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (typeof candidate === "string") {
-    return candidate;
-  } else {
-    throw new Error("No valid response from Gemini API.");
-  }
+  return data;
 }
 
 class Gemini503Error extends Error {

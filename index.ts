@@ -1,17 +1,40 @@
-import { askGemini, askGeminiWithRetry } from "./src/askGemini.ts";
+import { askGeminiImage, askGeminiWithRetry } from "./src/askGemini.ts";
 import { markdownToTerminal } from "./src/markdowner.ts";
 
 
 
-const args = Deno.args;
+let args = Deno.args;
 
 
-const query = args[0].includes(' ') ? args[0] : args.join(' ');
+let query: string;
+let image = false;
+
+if(args[0] === '-i'){
+    image = true;
+    args.shift();
+}
+
+if(args[0].includes(' ')){
+    query = args[0];
+}else{
+    query = args.join(' ');
+}
+
+
 
 console.log(query);
 
-const response = await askGeminiWithRetry(query);
-const markedDownResp = markdownToTerminal(response);
+if(image){
+    console.log('IMAGING');
+    const response = await askGeminiImage(query);
+    console.log(response);
+}else{
+    const response = await askGeminiWithRetry(query);
+    const markedDownResp = markdownToTerminal(response);
+    
+    console.log();
+    console.log(markedDownResp);
+}
 
-console.log();
-console.log(markedDownResp);
+
+
