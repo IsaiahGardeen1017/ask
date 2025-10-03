@@ -1,13 +1,6 @@
 import { GEMINI_API_KEY } from "../apiKey.ts";
 import { randomPeriods } from "./terminalFormatting.ts";
 
-function randomPersonality(): string {
-  const personalities = [
-    "You are an alien from space",
-  ];
-  return personalities[Math.floor(Math.random() * personalities.length)];
-}
-
 const maxTries = 5;
 export async function askGeminiWithRetry(
   query: string,
