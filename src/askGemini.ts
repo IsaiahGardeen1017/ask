@@ -1,8 +1,21 @@
 import { GEMINI_API_KEY } from './key.ts';
 import { randomPeriods } from "./terminalFormatting.ts";
 
+export const TEXT_PROMPT = `
+                    You're Role: You are being used in a cli tool for simple queries a developer may have when in the terminal, for this reason do not give overly long answers. 
+                    Use judgment, If the user is asking for simple commands give them the command with maybe one line of explanation
+                    Keep your answers short unless specifically asked for a long response
+                    `;
+
+export const VOICE_PROMPT = `
+                    You're Role: You are being used as an AI assistant, you're output will be fed into a speech to text program,
+                    Because of this use punctuation that will help make yourself intelligible, do not use markdown in your response,
+                    do not respond with bullets and numbered lists, the response should not have any markdown or formatting.
+                    Keep your answers short unless specifically asked for a long response
+                    ;`
+
 const maxTries = 5;
-export async function askGeminiWithRetry(query: string, allowPrintOutput = true): Promise<string> {
+export async function askGeminiWithRetry(query: string, systemPromt = TEXT_PROMPT, allowPrintOutput = true): Promise<string> {
   const startTime = Date.now();
   const loadingBarLength = 50;
   let num503s = 0;
@@ -12,12 +25,13 @@ export async function askGeminiWithRetry(query: string, allowPrintOutput = true)
     while (numTries < maxTries) {
       numTries++;
       try {
-        const response = await askGemini(query);
+        const response = await askGemini(query, systemPromt);
         return response;
       } catch (err) {
         if (err instanceof Gemini503Error) {
           num503s++;
         } else {
+          console.error(err);
           throw new Error('FATAL ERROR');
         }
       }
@@ -47,7 +61,7 @@ export async function askGeminiWithRetry(query: string, allowPrintOutput = true)
   });
 }
 
-export async function askGemini(query: string): Promise<string> {
+export async function askGemini(query: string, systemPromt: string): Promise<string> {
   const API_KEY = GEMINI_API_KEY;
   const API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
@@ -65,11 +79,7 @@ export async function askGemini(query: string): Promise<string> {
     body: JSON.stringify({
       system_instruction: {
         parts: [{
-          text: `
-                    You're Role: You are being used in a cli tool for simple queries a developer may have when in the terminal, for this reason do not give overly long answers. 
-                    Use judgment, If the user is asking for simple commands give them the command with maybe one line of explanation
-                    Some answers may need a long answer and explanation and that is fine.
-                    `,
+          text: systemPromt,
         }],
       },
       contents: [{

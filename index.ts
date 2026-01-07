@@ -1,40 +1,51 @@
 import { askGeminiImage, askGeminiWithRetry } from "./src/askGemini.ts";
+import { convo } from './src/conversationDriver.ts';
 import { markdownToTerminal } from "./src/markdowner.ts";
 
 
 
 let args = Deno.args;
 
+let history: number = 0;
 
-let query: string;
-let image = false;
+const queryParts: string[] = [];
 
-if(args[0] === '-i'){
-    image = true;
-    args.shift();
-}
+args.reduce((prev, curr, idx) => {
+    if(prev === '-h'){
+        const historyInt = parseInt(curr);
+        if(historyInt){
+            history = historyInt;
+        }else{
+            history = 999;
+            queryParts.push(curr);
+        }
+    }else{
+        queryParts.push(curr);
+    }
+    return curr;
+}, '');
 
-if(args[0].includes(' ')){
-    query = args[0];
-}else{
-    query = args.join(' ');
-}
+let query = '';
+if (queryParts.length === 0) {
+    await convo();
+} else {
+    //Single query
+    
+    query = queryParts.join(' ');
 
-
-
-console.log(query);
-
-if(image){
-    console.log('IMAGING');
-    const response = await askGeminiImage(query);
-    console.log(response);
-}else{
+    console.log(query);
+    
+    
     const response = await askGeminiWithRetry(query);
     const markedDownResp = markdownToTerminal(response);
     
     console.log();
-    console.log(markedDownResp);
+    console.log(response);
 }
+
+
+
+
 
 
 

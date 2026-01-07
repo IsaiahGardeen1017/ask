@@ -1,11 +1,17 @@
 {
     "tasks": {
         "dev": "deno run --allow-net --allow-env index.ts",
-        "build": "deno compile --allow-net --allow-env index.ts"
+        "build": "deno compile --allow-net --allow-env index.ts",
+        "md": "deno run -A src/markdowner.test.ts",
+        "saytest": "deno run -A src/say.test.ts",
+        "asks": "deno run -A src/asks.ts",
+        "clear": "rm -rf src/supertonic/assets/outdir/*"
+
     },
     "imports": {
-        "@std/assert": "jsr:@std/assert@1"
-    },
+        "@std/assert": "jsr:@std/assert@1",
+        "onnxruntime-node": "jsr:onnxruntime-node"
+      },
     "fmt": {
     "options": {
       "useTabs": true,
