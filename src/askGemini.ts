@@ -1,4 +1,3 @@
-import { GEMINI_API_KEY } from './key.ts';
 import { randomPeriods } from "./terminalFormatting.ts";
 
 export const TEXT_PROMPT = `
@@ -15,7 +14,7 @@ export const VOICE_PROMPT = `
                     ;`
 
 const maxTries = 5;
-export async function askGeminiWithRetry(query: string, systemPromt = TEXT_PROMPT, allowPrintOutput = true): Promise<string> {
+export async function askGeminiWithRetry(query: string, key: string, systemPromt = TEXT_PROMPT, allowPrintOutput = true): Promise<string> {
   const startTime = Date.now();
   const loadingBarLength = 50;
   let num503s = 0;
@@ -25,18 +24,17 @@ export async function askGeminiWithRetry(query: string, systemPromt = TEXT_PROMP
     while (numTries < maxTries) {
       numTries++;
       try {
-        const response = await askGemini(query, systemPromt);
+        const response = await askGemini(query, key, systemPromt);
         return response;
       } catch (err) {
-        if (err instanceof Gemini503Error) {
+        if (err instanceof GeminiError && err.status === 503) {
           num503s++;
         } else {
-          console.error(err);
-          throw new Error('FATAL ERROR');
+          throw err;
         }
       }
     }
-    return "Gemini servers are cooked ngl";
+    throw new GeminiError(503, 'Gemini servers are cooked!', {});
   };
 
   const resp = process();
@@ -61,12 +59,11 @@ export async function askGeminiWithRetry(query: string, systemPromt = TEXT_PROMP
   });
 }
 
-export async function askGemini(query: string, systemPromt: string): Promise<string> {
-  const API_KEY = GEMINI_API_KEY;
+export async function askGemini(query: string, key: string, systemPromt: string): Promise<string> {
   const API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-  if (!API_KEY) {
+  if (!key) {
     throw new Error("GEMINI_API_KEY environment variable is not set.");
   }
 
@@ -74,7 +71,7 @@ export async function askGemini(query: string, systemPromt: string): Promise<str
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": API_KEY,
+      "x-goog-api-key": key,
     },
     body: JSON.stringify({
       system_instruction: {
@@ -96,13 +93,9 @@ export async function askGemini(query: string, systemPromt: string): Promise<str
   if (!response.ok) {
     const errorBody = await response.json();
     if (response.status === 503) {
-      throw new Gemini503Error(
-        `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-      );
+      throw new GeminiError(503, response.statusText, errorBody,);
     }
-    throw new Error(
-      `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-    );
+    throw new GeminiError(response.status, response.statusText,errorBody);
   }
 
   const data = await response.json();
@@ -115,20 +108,15 @@ export async function askGemini(query: string, systemPromt: string): Promise<str
   }
 }
 
-export async function askGeminiImage(query: string): Promise<any> {
-  const API_KEY = GEMINI_API_KEY;
+export async function askGeminiImage(query: string, key: string,): Promise<any> {
   const API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
-
-  if (!API_KEY) {
-    throw new Error("GEMINI_API_KEY environment variable is not set.");
-  }
 
   const response = await fetch(`${API_URL}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": API_KEY,
+      "x-goog-api-key": key,
     },
     body: JSON.stringify({
       contents: [{
@@ -148,19 +136,22 @@ export async function askGeminiImage(query: string): Promise<any> {
 
   if (!response.ok) {
     const errorBody = await response.json();
-    if (response.status === 503) {
-      throw new Gemini503Error(
-        `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-      );
-    }
-    throw new Error(
-      `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-    );
+    throw new GeminiError(response.status, response.statusText,errorBody);
   }
 
   const data = await response.json();
   return data;
 }
 
-class Gemini503Error extends Error {
+export class GeminiError extends Error {
+  status: number;
+  statusText: string;
+  body: any;
+
+  constructor(status: number, statusText: string, body: any) {
+    super();
+    this.status = status;
+    this.statusText = statusText;
+    this.body = body;
+  }
 }
