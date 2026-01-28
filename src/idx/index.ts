@@ -1,7 +1,7 @@
 import { askGeminiWithRetry, GeminiError, TEXT_PROMPT } from "../askGemini.ts";
 import { markdownToTerminal } from "../markdowner.ts";
-import { colorString, logColor } from '../terminalFormatting.ts';
 import * as path from "jsr:@std/path";
+import { logFmt, termFmt } from '../terminalFormatting.ts';
 
 export async function run(os: 'windows' | 'unix' | 'dev') {
     try {
@@ -24,7 +24,7 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
             break;
         }
         case 'unix':
-            logColor('no support for unix, lmao', 'red');
+            logFmt('no support for unix, lmao', 'red');
             return;
             break;
         case 'dev':
@@ -40,14 +40,14 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
     let args = Deno.args;
 
     const askKey = () => {
-        console.log(colorString('\nYou must enter a Gemini API key to use this tool - ', 'black') + colorString('https://aistudio.google.com/api-keys', 'blue'));
+        console.log(termFmt('\nYou must enter a Gemini API key to use this tool - ', 'black') + termFmt('https://aistudio.google.com/api-keys', 'blue'));
         const key = prompt('Gemini key:')
         if (key) {
             config.apiKey = key;
             writeFile(configFileLocation, config);
-            logColor('saved key', 'blue');
+            logFmt('saved key', 'blue');
         } else {
-            logColor('No key entered', 'red');
+            logFmt('No key entered', 'red');
         }
     }
 
@@ -87,7 +87,7 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
     if (!skipHistory) {
         histData = await readHistory(historyFileLocation);
     }
-    skipHistory ? logColor('skipping history', 'black') : logColor(`using last ${histData?.history.length} queries`, 'black');
+    skipHistory ? logFmt('skipping history', 'black') : logFmt(`using last ${histData?.history.length} queries`, 'black');
 
 
 
@@ -95,7 +95,7 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
 
 
     const query = args.join(' ');
-    console.log(colorString('   | ', 'black') + colorString(query, 'yellow'));
+    console.log(termFmt('   | ', 'black') + termFmt(query, 'yellow'));
 
 
     //Figure out API key
@@ -109,12 +109,12 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
     try {
         const response = await askGeminiWithRetry(query, config.apiKey || '', TEXT_PROMPT);
         const markedDownResp = markdownToTerminal(response);
-        console.log(response);
+        console.log(markedDownResp);
     } catch (error) {
         if (error instanceof GeminiError) {
-            logColor(error.statusText, 'red');
+            termFmt(error.statusText, 'red');
         } else {
-            logColor('Unknown error', 'red', 'hi');
+            termFmt('Unknown error', 'red');
         }
     }
 

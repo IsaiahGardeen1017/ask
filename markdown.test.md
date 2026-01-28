@@ -13,15 +13,23 @@ This is a paragraph.
 ***Bold and italic text***
 ~~Strikethrough~~
 
-* Unordered list item 1
+* Unordered list item 1   
 * Unordered list item 2
-  * Nested item
+    * Nested item
 
 1. Ordered list item 1
 2. Ordered list item 2
    1. Nested ordered item
 
-`Inline code`
+``` yogwam
+  eee ggg
+yago
+```
+
+
+***`Inline code`***
+```Inline code```
+`**Inline code**`
 
 ```python
 # Code block
@@ -30,6 +38,7 @@ print("Hello, Markdown!")
 
 ---
 
+***[Link to Google](https://www.google.com)***
 [Link to Google](https://www.google.com)
 
 ![Alt text for image](https://via.placeholder.com/150)

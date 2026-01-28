@@ -7,7 +7,12 @@ export function randomPeriods(lenght: number) {
 }
 
 
+type OneOrMany<T> = T | T[];
+function ArrayFromOneOrMany<T>(input: OneOrMany<T>): T[] {
+    return Array.isArray(input) ? input : [input];
+}
 
+export type TerminalFormatOptions = 'bold' | 'dim' | 'italic' | 'underline' | 'blinking' | 'reverse' | 'hidden' | 'strikethrough'
 export type ConsoleColors = 'red' | 'green' | 'yellow' | 'black' | 'blue' | 'purple' | 'cyan' | 'white' | 'default';
 export type ColorTypes = 'fg' | 'hi';
 const colorDigits: Record<ConsoleColors, number> = {
@@ -21,22 +26,35 @@ const colorDigits: Record<ConsoleColors, number> = {
     white: 7,
     default: 8,
 }
+const formatDigits: Record<TerminalFormatOptions, number> = {
+    bold: 1,
+    dim: 2,
+    italic: 3,
+    underline: 4,
+    blinking: 5,
+    reverse: 7,
+    hidden: 8,
+    strikethrough: 9
+}
 const reset = '\x1b[0m';
 
-function getEscapeCode(color: ConsoleColors, type: ColorTypes = 'fg') {
-    const digit = colorDigits[color];
-    switch (type) {
-        case 'fg':
-            return `\x1b[3${digit}m`
-        case 'hi':
-            return `\x1b[9${digit}m`
+export function escapeText(text: string, codes: number[]): string {
+    return `\x1b[${codes.join(';')}m${text}${reset}`
+}
+
+export function termFmt(text: string, color?: ConsoleColors, bgColor?: ConsoleColors, formatting: OneOrMany<TerminalFormatOptions> = []): string {
+    const formatCodes = ArrayFromOneOrMany(formatting).map((format) => formatDigits[format]);
+    let codesArray = [];
+    if(bgColor){
+        codesArray.push(40 + colorDigits[bgColor]);
     }
+    if(color){
+        codesArray.push(30 + colorDigits[color]);
+    }
+    const codes = [codesArray, formatCodes].flat();
+    return escapeText(text, codes);
 }
 
-export function colorString(str: string, color: ConsoleColors = 'default', type: ColorTypes = 'fg') {
-    return `${getEscapeCode(color, type)}${str}${reset}`
-}
-
-export function logColor(str: string, color: ConsoleColors = 'default', type: ColorTypes = 'fg'){
-    console.log(colorString(str, color, type));
+export function logFmt(text: string, color: ConsoleColors = 'default', bgColor: ConsoleColors = 'default', formatting: OneOrMany<TerminalFormatOptions> = []) {
+    console.log(termFmt(text, color, bgColor, formatting));
 }
