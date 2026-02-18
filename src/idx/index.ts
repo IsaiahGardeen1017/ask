@@ -1,7 +1,15 @@
 import { askGeminiWithRetry, GeminiError, TEXT_PROMPT } from "../askGemini.ts";
-import { markdownToTerminal } from "../markdowner.ts";
+import { markdownToTerminal } from "../markdown/markdowner.ts";
 import * as path from "jsr:@std/path";
 import { logFmt, termFmt } from '../terminalFormatting.ts';
+import { writeConfigFile, Configuration, defaultConfig, emptyHistory, getFile, HistoryData, HistoryItem, readHistory, setHistory } from '../staticData.ts';
+import { askForKey } from '../actions/AskForKey.ts';
+import { singleQuery } from '../actions/SingleQuery.ts';
+
+export type ActionData = {
+    configPath: string,
+    historyPath: string
+}
 
 export async function run(os: 'windows' | 'unix' | 'dev') {
     try {
@@ -26,11 +34,15 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
         case 'unix':
             logFmt('no support for unix, lmao', 'red');
             return;
-            break;
         case 'dev':
             configFileLocation = './dev-data/dev-config.json';
             historyFileLocation = './dev-data/dev-hist.json';
             break;
+    }
+
+    const actionData = {
+        configPath: configFileLocation,
+        historyPath: historyFileLocation
     }
 
     const config = await getFile(configFileLocation, defaultConfig) as Configuration;
@@ -39,26 +51,16 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
 
     let args = Deno.args;
 
-    const askKey = () => {
-        console.log(termFmt('\nYou must enter a Gemini API key to use this tool - ', 'black') + termFmt('https://aistudio.google.com/api-keys', 'blue'));
-        const key = prompt('Gemini key:')
-        if (key) {
-            config.apiKey = key;
-            writeFile(configFileLocation, config);
-            logFmt('saved key', 'blue');
-        } else {
-            logFmt('No key entered', 'red');
-        }
-    }
+
 
 
 
     let skipHistory = false;
     let queryParts = [];
-    let allQuery = false;
+    let theRestAreAllPartOfQuery = false;
     for (let i = 0; i < args.length; i++) {
         const a = args[i];
-        if (allQuery) {
+        if (theRestAreAllPartOfQuery) {
             queryParts.push(a);
         } else {
             switch (a) {
@@ -66,115 +68,41 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
                 case '--reset':
                     setHistory(historyFileLocation);
                     break;
-                case '-h':
+                case '-s':
                 case '--skip-history':
                     skipHistory = true;
                     break;
-                case '-k':
-                case '--key':
-                    askKey();
-                    i = args.length + 1;
+                case '-h':
+                case '--help':
+                    printHelp();
                     return;
                 default:
-                    allQuery = true;
+                    theRestAreAllPartOfQuery = true;
                     queryParts.push(a);
             }
         }
     }
 
 
-    let histData: HistoryData = defaultHistory();
-    if (!skipHistory) {
-        histData = await readHistory(historyFileLocation);
-    }
-    skipHistory ? logFmt('skipping history', 'black') : logFmt(`using last ${histData?.history.length} queries`, 'black');
-
-
-
-
-
-
-    const query = args.join(' ');
-    console.log(termFmt('   | ', 'black') + termFmt(query, 'yellow'));
-
-
-    //Figure out API key
-    if (!config.apiKey) {
-        await askKey();
-    }
-    if (!config.apiKey) {
-        return;
-    }
-
-    try {
-        const response = await askGeminiWithRetry(query, config.apiKey || '', TEXT_PROMPT);
-        const markedDownResp = markdownToTerminal(response);
-        console.log(markedDownResp);
-    } catch (error) {
-        if (error instanceof GeminiError) {
-            termFmt(error.statusText, 'red');
-        } else {
-            termFmt('Unknown error', 'red');
-        }
-    }
-
+    await singleQuery(actionData, queryParts.join(' '), skipHistory);
     console.log();
 }
 
 
 
-async function getFile(path: string, defaultData: () => any): Promise<any> {
-    let data: Configuration;
-    try {
-        return await JSON.parse(Deno.readTextFileSync(path));
-    } catch (err) {
-        data = defaultData();
-        try {
-            await Deno.writeTextFileSync(path, JSON.stringify(data));
-            return data;
-        } catch (err) {
-            throw `could not read or write file: ${path}`;
-        }
-    }
+
+
+
+
+
+
+
+function printHelp(): string {
+    return `
+        flag
+        -h: help
+        -s, --skip-history: Makes request without history
+        -r, --reset: Resets history
+    `;
 }
 
-async function writeFile(path: string, data: any) {
-    try {
-        await Deno.writeTextFileSync(path, JSON.stringify(data));
-    } catch (err) {
-        throw `could not write file: ${path}`;
-    }
-}
-
-
-
-export type Configuration = {
-    apiKey?: string
-}
-
-function defaultConfig() {
-    return {
-    }
-}
-
-
-export type HistoryData = {
-    history: {
-        timestamp: number,
-        query: string,
-        response: string
-    }[];
-}
-
-
-function defaultHistory(): HistoryData {
-    return { history: [] };
-}
-
-async function readHistory(path: string): Promise<HistoryData> {
-    return await getFile(path, defaultHistory) as HistoryData;
-}
-
-async function setHistory(path: string, data: HistoryData = defaultHistory()) {
-    await writeFile(path, data);
-}

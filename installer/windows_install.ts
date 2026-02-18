@@ -3,14 +3,14 @@ import { exists } from "jsr:@std/fs/exists";
 
 import executable from "../ask.exe" with { type: "bytes" };
 import uninstaller from "../ask-windows-uninstall.exe" with { type: "bytes" };
-import { logColor } from '../src/terminalFormatting.ts';
+import { logFmt } from '../src/terminalFormatting.ts';
 import { Configuration, HistoryData } from '../src/idx/index.ts';
 import { windows_addPathEntry } from './windows_funcs.ts';
 
 try {
     driver();
 } catch (err) {
-    logColor(`Something didn't work`, 'red');
+    logFmt(`Something didn't work`, 'red');
     prompt('press any key to exit');
 }
 

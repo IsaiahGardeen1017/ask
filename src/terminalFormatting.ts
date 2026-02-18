@@ -13,9 +13,9 @@ function ArrayFromOneOrMany<T>(input: OneOrMany<T>): T[] {
 }
 
 export type TerminalFormatOptions = 'bold' | 'dim' | 'italic' | 'underline' | 'blinking' | 'reverse' | 'hidden' | 'strikethrough'
-export type ConsoleColors = 'red' | 'green' | 'yellow' | 'black' | 'blue' | 'purple' | 'cyan' | 'white' | 'default';
-export type ColorTypes = 'fg' | 'hi';
-const colorDigits: Record<ConsoleColors, number> = {
+export type TerminalColors = 'red' | 'green' | 'yellow' | 'black' | 'blue' | 'purple' | 'cyan' | 'white' | 'default';
+export type TerminalColorTypes = 'fg' | 'hi';
+const colorDigits: Record<TerminalColors, number> = {
     black: 0,
     red: 1,
     green: 2,
@@ -42,7 +42,7 @@ export function escapeText(text: string, codes: number[]): string {
     return `\x1b[${codes.join(';')}m${text}${reset}`
 }
 
-export function termFmt(text: string, color?: ConsoleColors, bgColor?: ConsoleColors, formatting: OneOrMany<TerminalFormatOptions> = []): string {
+export function termFmt(text: string, color?: TerminalColors, bgColor?: TerminalColors, formatting: OneOrMany<TerminalFormatOptions> = []): string {
     const formatCodes = ArrayFromOneOrMany(formatting).map((format) => formatDigits[format]);
     let codesArray = [];
     if(bgColor){
@@ -55,6 +55,6 @@ export function termFmt(text: string, color?: ConsoleColors, bgColor?: ConsoleCo
     return escapeText(text, codes);
 }
 
-export function logFmt(text: string, color: ConsoleColors = 'default', bgColor: ConsoleColors = 'default', formatting: OneOrMany<TerminalFormatOptions> = []) {
+export function logFmt(text: string, color: TerminalColors = 'default', bgColor: TerminalColors = 'default', formatting: OneOrMany<TerminalFormatOptions> = []) {
     console.log(termFmt(text, color, bgColor, formatting));
 }

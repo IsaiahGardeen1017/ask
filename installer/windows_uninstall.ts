@@ -1,12 +1,12 @@
 import * as path from "jsr:@std/path";
 import { exists } from "jsr:@std/fs/exists";
-import { logColor } from '../src/terminalFormatting.ts';
+import { logFmt } from '../src/terminalFormatting.ts';
 import { windows_removePathEntry } from './windows_funcs.ts';
 
 try {
     driver();
 } catch (err) {
-    logColor(`Something didn't work`, 'red');
+    logFmt(`Something didn't work`, 'red');
 }
 
 async function driver() {

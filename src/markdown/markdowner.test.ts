@@ -1,4 +1,6 @@
-import { markdownToTerminal } from './markdowner.ts';
+import { markdownToTerminal } from '../markdown/markdowner.ts';
+import { markdownToTerminalOld } from '../markdown/markdownerOLD.ts';
+
 
 const md = Deno.readTextFileSync('./markdown.test.md');
 

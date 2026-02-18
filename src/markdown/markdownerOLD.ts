@@ -1,10 +1,10 @@
 import test from 'node:test';
-import { ConsoleColors, escapeText, termFmt, TerminalFormatOptions } from './terminalFormatting.ts';
+import { TerminalColors, escapeText, termFmt, TerminalFormatOptions } from '../terminalFormatting.ts';
 
-const inlineCodeColor: ConsoleColors = 'blue';
-const inlineCodeBgColor: ConsoleColors = 'black';
+const inlineCodeColor: TerminalColors = 'blue';
+const inlineCodeBgColor: TerminalColors = 'black';
 
-export function markdownToTerminal(markdownString: string): string {
+export function markdownToTerminalOld(markdownString: string): string {
 
     const { columns, rows } = Deno.consoleSize();
 
@@ -15,8 +15,8 @@ export function markdownToTerminal(markdownString: string): string {
         const line = lines[i];
         const perLinFunction = (line: string) => {
             let text = line;
-            let color: ConsoleColors | undefined = undefined;
-            let bgColor: ConsoleColors | undefined = undefined;
+            let color: TerminalColors | undefined = undefined;
+            let bgColor: TerminalColors | undefined = undefined;
             let formats: TerminalFormatOptions[] = []
 
             if(text === '```'){
