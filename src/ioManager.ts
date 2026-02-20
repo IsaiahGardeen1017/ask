@@ -30,6 +30,7 @@ export class IOManager {
 
     stopLoading(){
         clearInterval(this.loadingInterval);
+        log(`\r${""}`.padEnd(loadingBarLength + 1, " "));
         this.loadingInterval = undefined;
     }
 

@@ -1,4 +1,4 @@
-import { log } from './ioManager.ts';
+import { loadUntil, log } from './ioManager.ts';
 import { randomPeriods } from "./terminalFormatting.ts";
 
 export const TEXT_PROMPT = `
@@ -37,22 +37,7 @@ export async function askGeminiWithRetry(query: string, key: string, systemPromt
     throw new GeminiError(503, 'Gemini servers are cooked!', {});
   };
 
-  const resp = process();
-  const interval = setInterval(() => {
-    if (allowPrintOutput) {
-      Deno.stdout.writeSync(
-        new TextEncoder().encode(`\r${randomPeriods(loadingBarLength)}`),
-      );
-    }
-  }, 50);
-
-  return resp.then((val) => {
-    clearInterval(interval);
-    if (allowPrintOutput) {
-      log(`\r${""}`.padEnd(loadingBarLength + 1, " "));
-    }
-    return val;
-  });
+  return await loadUntil(process());
 }
 
 export async function askGemini(query: string, key: string, systemPromt: string): Promise<string> {
