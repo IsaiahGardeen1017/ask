@@ -1,6 +1,7 @@
 import { ActionData as ActionData } from '../idx/index.ts';
+import { log } from '../ioManager.ts';
 import {   getConfiguration,  writeConfigFile } from '../staticData.ts';
-import { logFmt, termFmt } from '../terminalFormatting.ts';
+import { termFmt } from '../terminalFormatting.ts';
 
 
 export async function getApiKey(reqData: ActionData): Promise<string> {
@@ -21,13 +22,13 @@ export async function getApiKey(reqData: ActionData): Promise<string> {
 
 export async function askForKey(reqData: ActionData) {
     const config = await getConfiguration(reqData.configPath);
-    console.log(termFmt('\nYou must enter a Gemini API key to use this tool - ', 'black') + termFmt('https://aistudio.google.com/api-keys', 'blue'));
+    log(termFmt('\nYou must enter a Gemini API key to use this tool - ', 'black') + termFmt('https://aistudio.google.com/api-keys', 'blue'));
     const key = prompt('Gemini key:')
     if (key) {
         config.apiKey = key;
         writeConfigFile(reqData.configPath, config);
-        logFmt('saved key', 'blue');
+        log('saved key', 'blue');
     } else {
-        logFmt('No key entered', 'red');
+        log('No key entered', 'red');
     }
 }

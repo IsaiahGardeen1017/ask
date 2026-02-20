@@ -1,10 +1,10 @@
-import { askGeminiWithRetry, GeminiError, TEXT_PROMPT } from "../askGemini.ts";
-import { markdownToTerminal } from "../markdown/markdowner.ts";
+
 import * as path from "jsr:@std/path";
-import { logFmt, termFmt } from '../terminalFormatting.ts';
-import { writeConfigFile, Configuration, defaultConfig, emptyHistory, getFile, HistoryData, HistoryItem, readHistory, setHistory } from '../staticData.ts';
-import { askForKey } from '../actions/AskForKey.ts';
+import { termFmt, typeOutString } from '../terminalFormatting.ts';
+import { getConfiguration, setHistory } from '../staticData.ts';
 import { singleQuery } from '../actions/SingleQuery.ts';
+import { loadUntil, log } from '../ioManager.ts';
+import { delay } from '../utils.ts';
 
 export type ActionData = {
     configPath: string,
@@ -15,7 +15,7 @@ export async function run(os: 'windows' | 'unix' | 'dev') {
     try {
         await _run(os);
     } catch (err) {
-        console.log(err);
+        log(err);
     }
 }
 async function _run(os: 'windows' | 'unix' | 'dev') {
@@ -32,7 +32,7 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
             break;
         }
         case 'unix':
-            logFmt('no support for unix, lmao', 'red');
+            log('no support for unix, lmao', 'red');
             return;
         case 'dev':
             configFileLocation = './dev-data/dev-config.json';
@@ -45,16 +45,7 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
         historyPath: historyFileLocation
     }
 
-    const config = await getFile(configFileLocation, defaultConfig) as Configuration;
-
-
-
     let args = Deno.args;
-
-
-
-
-
     let skipHistory = false;
     let queryParts = [];
     let theRestAreAllPartOfQuery = false;
@@ -67,6 +58,7 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
                 case '-r':
                 case '--reset':
                     setHistory(historyFileLocation);
+                    typeOutString(termFmt('history reset', 'red'), 15);
                     break;
                 case '-s':
                 case '--skip-history':
@@ -76,6 +68,13 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
                 case '--help':
                     printHelp();
                     return;
+                case '-c':
+                case '--config': {
+                    const config = await getConfiguration(configFileLocation);
+                    log(configFileLocation);
+                    log(JSON.stringify(config, null, '\t'));
+                    return;
+                }
                 default:
                     theRestAreAllPartOfQuery = true;
                     queryParts.push(a);
@@ -84,8 +83,10 @@ async function _run(os: 'windows' | 'unix' | 'dev') {
     }
 
 
-    await singleQuery(actionData, queryParts.join(' '), skipHistory);
-    console.log();
+    if (queryParts.length > 0) {
+        await singleQuery(actionData, queryParts.join(' '), skipHistory);
+    }
+    log();
 }
 
 

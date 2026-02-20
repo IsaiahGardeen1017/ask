@@ -5,7 +5,7 @@ export type Configuration = {
 
 export function defaultConfig(): Configuration {
     return {
-        logQuerires: true
+        logQuerires: false
     }
 }
 

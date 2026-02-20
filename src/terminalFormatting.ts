@@ -1,3 +1,5 @@
+import { delay, OneOrMany } from './utils.ts';
+
 export function randomPeriods(lenght: number) {
     let outStr = '';
     for (let i = 0; i < lenght; i++) {
@@ -7,7 +9,16 @@ export function randomPeriods(lenght: number) {
 }
 
 
-type OneOrMany<T> = T | T[];
+export async function typeOutString(str: string, delayms: number){
+    const chars = str.split('');
+    for(let i = 0; i < chars.length; i++){
+        await delay(delayms);
+        process.stdout.write(chars[i]);
+    }
+}
+
+
+
 function ArrayFromOneOrMany<T>(input: OneOrMany<T>): T[] {
     return Array.isArray(input) ? input : [input];
 }
@@ -55,6 +66,6 @@ export function termFmt(text: string, color?: TerminalColors, bgColor?: Terminal
     return escapeText(text, codes);
 }
 
-export function logFmt(text: string, color: TerminalColors = 'default', bgColor: TerminalColors = 'default', formatting: OneOrMany<TerminalFormatOptions> = []) {
+export function logFmt(text: string, color?: TerminalColors, bgColor?: TerminalColors, formatting: OneOrMany<TerminalFormatOptions> = []) {
     console.log(termFmt(text, color, bgColor, formatting));
 }

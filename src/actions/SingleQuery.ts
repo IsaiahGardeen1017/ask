@@ -1,5 +1,6 @@
 import { askGeminiWithRetry, GeminiError, TEXT_PROMPT } from '../askGemini.ts';
 import { ActionData } from '../idx/index.ts';
+import { log } from '../ioManager.ts';
 import { markdownToTerminal } from '../markdown/markdowner.ts';
 import { emptyHistory, getConfiguration, HistoryData, HistoryItem, readHistory, setHistory } from '../staticData.ts';
 import { termFmt } from '../terminalFormatting.ts';
@@ -16,12 +17,12 @@ export async function singleQuery(reqData: ActionData, query: string, skipHistor
     const fullQuery = createFullQueryFromHistory(query, histData);
 
     if (logQueries) {
-        console.log(termFmt('   | ', 'black') + termFmt(fullQuery, 'yellow'));
+        log(termFmt('   | ', 'black') + termFmt(fullQuery, 'yellow'));
     }
 
 
     try {
-        const response = await askGeminiWithRetry(fullQuery, config.apiKey || '', TEXT_PROMPT);
+        const response = await askGeminiWithRetry(fullQuery, key || '', TEXT_PROMPT);
 
         const newHistoryItem: HistoryItem = {
             query: query,
@@ -33,7 +34,7 @@ export async function singleQuery(reqData: ActionData, query: string, skipHistor
         setHistory(reqData.historyPath, histData);
 
         const markedDownResp = markdownToTerminal(response);
-        console.log(markedDownResp);
+        log(markedDownResp);
     } catch (error) {
         if (error instanceof GeminiError) {
             termFmt(error.statusText, 'red');

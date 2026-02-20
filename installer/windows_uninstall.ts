@@ -1,12 +1,12 @@
 import * as path from "jsr:@std/path";
 import { exists } from "jsr:@std/fs/exists";
-import { logFmt } from '../src/terminalFormatting.ts';
 import { windows_removePathEntry } from './windows_funcs.ts';
+import { log } from '../src/ioManager.ts';
 
 try {
     driver();
 } catch (err) {
-    logFmt(`Something didn't work`, 'red');
+    log(`Something didn't work`, 'red');
 }
 
 async function driver() {
@@ -16,7 +16,7 @@ async function driver() {
     if (!appData) {
         throw new Error("Could not read %APPDATA%");
     }
-    console.log(`uninstalling at ${appData}`);
+    log(`uninstalling at ${appData}`);
 
 
     const appDir = path.join(appData, 'ask');
@@ -26,7 +26,7 @@ async function driver() {
 
     await windows_removePathEntry(appDir, 'User');
     await windows_removePathEntry('C:\\ask', 'User');    
-    console.log('Uninstall complete!');
+    log('Uninstall complete!');
 
     prompt('press any key to exit');
 }

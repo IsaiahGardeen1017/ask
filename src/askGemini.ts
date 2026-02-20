@@ -1,3 +1,4 @@
+import { log } from './ioManager.ts';
 import { randomPeriods } from "./terminalFormatting.ts";
 
 export const TEXT_PROMPT = `
@@ -15,7 +16,6 @@ export const VOICE_PROMPT = `
 
 const maxTries = 5;
 export async function askGeminiWithRetry(query: string, key: string, systemPromt = TEXT_PROMPT, allowPrintOutput = true): Promise<string> {
-  const startTime = Date.now();
   const loadingBarLength = 50;
   let num503s = 0;
 
@@ -38,9 +38,8 @@ export async function askGeminiWithRetry(query: string, key: string, systemPromt
   };
 
   const resp = process();
-  let loading = true;
   const interval = setInterval(() => {
-    if (allowPrintOutput && loading) {
+    if (allowPrintOutput) {
       Deno.stdout.writeSync(
         new TextEncoder().encode(`\r${randomPeriods(loadingBarLength)}`),
       );
@@ -48,13 +47,10 @@ export async function askGeminiWithRetry(query: string, key: string, systemPromt
   }, 50);
 
   return resp.then((val) => {
-    loading = false;
     clearInterval(interval);
-    const timeDiff = Date.now() - startTime;
     if (allowPrintOutput) {
-      console.log(`\r${""}`.padEnd(loadingBarLength + 1, " "));
+      log(`\r${""}`.padEnd(loadingBarLength + 1, " "));
     }
-    //Time diff console.log(`\r${timeDiff}ms    ${''.padEnd(num503s, '.')}`.padEnd(loadingBarLength + 1, ' '));
     return val;
   });
 }

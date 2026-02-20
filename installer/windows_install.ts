@@ -3,19 +3,19 @@ import { exists } from "jsr:@std/fs/exists";
 
 import executable from "../ask.exe" with { type: "bytes" };
 import uninstaller from "../ask-windows-uninstall.exe" with { type: "bytes" };
-import { logFmt } from '../src/terminalFormatting.ts';
-import { Configuration, HistoryData } from '../src/idx/index.ts';
 import { windows_addPathEntry } from './windows_funcs.ts';
+import { Configuration, defaultConfig, HistoryData } from '../src/staticData.ts';
+import { log } from '../src/ioManager.ts';
 
 try {
     driver();
 } catch (err) {
-    logFmt(`Something didn't work`, 'red');
+    log(`Something didn't work`, 'red');
     prompt('press any key to exit');
 }
 
 
-const defaultConfig: Configuration = {};
+const defConfig: Configuration = defaultConfig();
 const defaultHistory: HistoryData = {history: []}
 
 async function driver() {
@@ -25,7 +25,7 @@ async function driver() {
     if (!appData) {
         throw new Error("Could not read %APPDATA%");
     }
-    console.log(`installing at ${appData}`);
+    log(`installing at ${appData}`);
 
 
     const appDir = path.join(appData, 'ask');
@@ -34,12 +34,12 @@ async function driver() {
         if (wipeoutExisting) {
             Deno.removeSync(appDir, { recursive: true });
         } else {
-            console.log('exiting instillation')
+            log('exiting instillation')
             return;
         }
     }
     await Deno.mkdirSync(appDir);
-    await Deno.writeTextFileSync(path.join(appDir, 'config.json'), JSON.stringify(defaultConfig));
+    await Deno.writeTextFileSync(path.join(appDir, 'config.json'), JSON.stringify(defConfig));
     await Deno.writeTextFileSync(path.join(appDir, 'hist.json'), JSON.stringify(defaultHistory));
 
     
@@ -55,9 +55,9 @@ async function driver() {
 
     
     windows_addPathEntry(appDir, 'User');
-    console.log('Added \'ask\' to User PATH');
+    log('Added \'ask\' to User PATH');
     
-    console.log('Install complete!');
+    log('Install complete!');
     prompt('press any key to exit');
 }
 
