@@ -1,9 +1,10 @@
-import { askGeminiWithRetry, GeminiError, TEXT_PROMPT } from '../askGemini.ts';
+import { askGeminiWithRetry, GeminiError} from '../askGemini.ts';
 import { ActionData } from '../index.ts';
 import { log } from '../ioManager.ts';
 import { markdownToTerminal } from '../markdown/markdowner.ts';
 import { emptyHistory, getConfiguration, HistoryData, HistoryItem, readHistory, setHistory } from '../staticData.ts';
 import { termFmt } from '../terminalFormatting.ts';
+import { createFullQueryFromHistory } from '../utils/Prompting.ts';
 import { getApiKey } from './AskForKey.ts';
 
 export async function singleQuery(reqData: ActionData, query: string, skipHistory = false) {
@@ -21,7 +22,7 @@ export async function singleQuery(reqData: ActionData, query: string, skipHistor
 	}
 
 	try {
-		const response = await askGeminiWithRetry(fullQuery, key || '', TEXT_PROMPT);
+		const response = await askGeminiWithRetry(fullQuery, key || '');
 
 		const newHistoryItem: HistoryItem = {
 			query: query,
@@ -41,15 +42,4 @@ export async function singleQuery(reqData: ActionData, query: string, skipHistor
 			termFmt('Unknown error', 'red');
 		}
 	}
-}
-
-function createFullQueryFromHistory(query: string, histData: HistoryData): string {
-	const mapped = histData.history.map((histItem) => {
-		const userStr = `*User:* ${histItem.query}\n`;
-		const agentStr = `*Agnet:* ${histItem.response}\n`;
-
-		return `${userStr}${agentStr}`;
-	});
-
-	return mapped.join('n') + '\n\n' + `Current User Query: ${query}`;
 }

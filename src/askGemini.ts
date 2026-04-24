@@ -1,30 +1,20 @@
 import { loadUntil, log } from './ioManager.ts';
 import { randomPeriods } from "./terminalFormatting.ts";
+import { PromptKeys, Prompts } from './utils/Prompting.ts';
 
-export const TEXT_PROMPT = `
-                    You're Role: You are being used in a cli tool for simple queries a developer may have when in the terminal, for this reason do not give overly long answers. 
-                    Use judgment, If the user is asking for simple commands give them the command with maybe one line of explanation
-                    Keep your answers short unless specifically asked for a long response
-                    `;
 
-export const VOICE_PROMPT = `
-                    You're Role: You are being used as an AI assistant, you're output will be fed into a speech to text program,
-                    Because of this use punctuation that will help make yourself intelligible, do not use markdown in your response,
-                    do not respond with bullets and numbered lists, the response should not have any markdown or formatting.
-                    Keep your answers short unless specifically asked for a long response
-                    ;`
 
 const maxTries = 5;
-export async function askGeminiWithRetry(query: string, key: string, systemPromt = TEXT_PROMPT, allowPrintOutput = true): Promise<string> {
-  const loadingBarLength = 50;
-  let num503s = 0;
+export async function askGeminiWithRetry(query: string, key: string, systemPromt: PromptKeys = 'TEXT_PROMPT'): Promise<string> {
+    let num503s = 0;
 
   const process = async () => {
     let numTries = 0;
     while (numTries < maxTries) {
       numTries++;
       try {
-        const response = await askGemini(query, key, systemPromt);
+        const prompt = Prompts[systemPromt]
+        const response = await askGemini(query, key, prompt);
         return response;
       } catch (err) {
         if (err instanceof GeminiError && err.status === 503) {
@@ -87,41 +77,6 @@ export async function askGemini(query: string, key: string, systemPromt: string)
   } else {
     throw new Error("No valid response from Gemini API.");
   }
-}
-
-export async function askGeminiImage(query: string, key: string,): Promise<any> {
-  const API_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
-
-  const response = await fetch(`${API_URL}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": key,
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: query }],
-      }],
-      generationConfig: {
-        thinkingConfig: {
-          thinkingBudget: 0,
-        },
-        imageConfig: {
-          aspectRatio: "1:1"
-
-        }
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.json();
-    throw new GeminiError(response.status, response.statusText,errorBody);
-  }
-
-  const data = await response.json();
-  return data;
 }
 
 export class GeminiError extends Error {
