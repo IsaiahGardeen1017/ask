@@ -30,5 +30,10 @@ if(true){
 
     console.log('SYMBOLS BELOW')
     console.log(strings);
+
+
+    const finalOutput = parser.renderSymbols(symbols);
+
+    console.log(finalOutput);
     
 }

@@ -60,10 +60,7 @@ export class markdownParser {
 		const tokens = this.tokenizeLine(text);
 		const symbols = this.symbolizeTokens(tokens);
 
-		console.log(`LINE: ${text}, ][][ Tokens: ${tokens.length}`);
-		return tokens.map((t) => {
-			return t.replaceAll(' ', '∎');
-		}).join(' | ');
+		return this.renderSymbols(symbols);
 	}
 
 	tokenizeLine(text: string): string[] {
@@ -127,6 +124,10 @@ export class markdownParser {
 		} else {
 			return simplifyTokens(tokens);
 		}
+	}
+
+	renderSymbols(symbols: mdSymbol[]): string {
+		return '';
 	}
 }
 

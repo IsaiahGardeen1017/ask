@@ -9,9 +9,9 @@ export function randomPeriods(lenght: number) {
 }
 
 
-export async function typeOutString(str: string, delayms: number){
+export async function typeOutString(str: string, delayms: number) {
     const chars = str.split('');
-    for(let i = 0; i < chars.length; i++){
+    for (let i = 0; i < chars.length; i++) {
         await delay(delayms);
         process.stdout.write(chars[i]);
     }
@@ -56,10 +56,10 @@ export function escapeText(text: string, codes: number[]): string {
 export function termFmt(text: string, color?: TerminalColors, bgColor?: TerminalColors, formatting: OneOrMany<TerminalFormatOptions> = []): string {
     const formatCodes = ArrayFromOneOrMany(formatting).map((format) => formatDigits[format]);
     let codesArray = [];
-    if(bgColor){
+    if (bgColor) {
         codesArray.push(40 + colorDigits[bgColor]);
     }
-    if(color){
+    if (color) {
         codesArray.push(30 + colorDigits[color]);
     }
     const codes = [codesArray, formatCodes].flat();
@@ -69,3 +69,5 @@ export function termFmt(text: string, color?: TerminalColors, bgColor?: Terminal
 export function logFmt(text: string, color?: TerminalColors, bgColor?: TerminalColors, formatting: OneOrMany<TerminalFormatOptions> = []) {
     console.log(termFmt(text, color, bgColor, formatting));
 }
+
+
