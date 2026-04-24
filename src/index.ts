@@ -2,7 +2,7 @@ import * as path from 'jsr:@std/path';
 import { termFmt, typeOutString } from './terminalFormatting.ts';
 import { getConfiguration, setHistory } from './staticData.ts';
 import { singleQuery } from './actions/SingleQuery.ts';
-import { log } from './ioManager.ts';
+import { IOManager, log } from './ioManager.ts';
 
 export type ActionData = {
 	configPath: string;
@@ -59,7 +59,8 @@ async function run(os: RuntimeMode, args: string[]) {
 				case '-r':
 				case '--reset':
 					setHistory(historyFileLocation);
-					typeOutString(termFmt('history reset', 'red'), 15);
+					log('history reset', 'red');
+					//typeOutString(termFmt('history reset', 'red'), 15);
 					break;
 				case '-s':
 				case '--skip-history':
@@ -67,7 +68,7 @@ async function run(os: RuntimeMode, args: string[]) {
 					break;
 				case '-h':
 				case '--help':
-					console.log(printHelp());
+					log(helpString());
 					return;
 				case '--dev':
 					break;
@@ -91,7 +92,7 @@ async function run(os: RuntimeMode, args: string[]) {
 	log();
 }
 
-function printHelp(): string {
+function helpString(): string {
 	return `
         flag
         -h: help

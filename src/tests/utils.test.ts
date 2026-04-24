@@ -1,5 +1,5 @@
 import { assert } from 'node:console';
-import { arrayEquals, markdownToTerminal } from './markdown/markdowner.ts';
+import { arrayEquals, markdownToTerminal } from '../markdown/markdowner.ts';
 
 
 

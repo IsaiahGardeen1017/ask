@@ -2,7 +2,8 @@
 	"tasks": {
 		"dev": "deno run --allow-net --allow-read --allow-write --allow-env src/index.ts --dev",
 		"build": "deno run --allow-read --allow-write --allow-run scripts/build.ts",
-		"md": "deno run --allow-read src/markdown/markdowner.test.ts"
+		"md": "deno run --allow-read src/markdown/markdowner.test.ts",
+		"load": "deno run src/tests/loading.test.ts"
 	},
 	"imports": {},
 	"fmt": {
