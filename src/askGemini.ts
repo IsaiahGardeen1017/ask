@@ -1,72 +1,40 @@
-import { GEMINI_API_KEY } from './key.ts';
+import { loadUntil, log } from './ioManager.ts';
 import { randomPeriods } from "./terminalFormatting.ts";
+import { PromptKeys, Prompts } from './utils/Prompting.ts';
 
-export const TEXT_PROMPT = `
-                    You're Role: You are being used in a cli tool for simple queries a developer may have when in the terminal, for this reason do not give overly long answers. 
-                    Use judgment, If the user is asking for simple commands give them the command with maybe one line of explanation
-                    Keep your answers short unless specifically asked for a long response
-                    `;
 
-export const VOICE_PROMPT = `
-                    You're Role: You are being used as an AI assistant, you're output will be fed into a speech to text program,
-                    Because of this use punctuation that will help make yourself intelligible, do not use markdown in your response,
-                    do not respond with bullets and numbered lists, the response should not have any markdown or formatting.
-                    Keep your answers short unless specifically asked for a long response
-                    ;`
 
 const maxTries = 5;
-export async function askGeminiWithRetry(query: string, systemPromt = TEXT_PROMPT, allowPrintOutput = true): Promise<string> {
-  const startTime = Date.now();
-  const loadingBarLength = 50;
-  let num503s = 0;
+export async function askGeminiWithRetry(query: string, key: string, systemPromt: PromptKeys = 'TEXT_PROMPT'): Promise<string> {
+    let num503s = 0;
 
   const process = async () => {
     let numTries = 0;
     while (numTries < maxTries) {
       numTries++;
       try {
-        const response = await askGemini(query, systemPromt);
+        const prompt = Prompts[systemPromt]
+        const response = await askGemini(query, key, prompt);
         return response;
       } catch (err) {
-        if (err instanceof Gemini503Error) {
+        if (err instanceof GeminiError && err.status === 503) {
           num503s++;
         } else {
-          console.error(err);
-          throw new Error('FATAL ERROR');
+          throw err;
         }
       }
     }
-    return "Gemini servers are cooked ngl";
+    throw new GeminiError(503, 'Gemini servers are cooked!', {});
   };
 
-  const resp = process();
-  let loading = true;
-  const interval = setInterval(() => {
-    if (allowPrintOutput && loading) {
-      Deno.stdout.writeSync(
-        new TextEncoder().encode(`\r${randomPeriods(loadingBarLength)}`),
-      );
-    }
-  }, 50);
-
-  return resp.then((val) => {
-    loading = false;
-    clearInterval(interval);
-    const timeDiff = Date.now() - startTime;
-    if (allowPrintOutput) {
-      console.log(`\r${""}`.padEnd(loadingBarLength + 1, " "));
-    }
-    //Time diff console.log(`\r${timeDiff}ms    ${''.padEnd(num503s, '.')}`.padEnd(loadingBarLength + 1, ' '));
-    return val;
-  });
+  return await loadUntil(process());
 }
 
-export async function askGemini(query: string, systemPromt: string): Promise<string> {
-  const API_KEY = GEMINI_API_KEY;
+export async function askGemini(query: string, key: string, systemPromt: string): Promise<string> {
   const API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-  if (!API_KEY) {
+  if (!key) {
     throw new Error("GEMINI_API_KEY environment variable is not set.");
   }
 
@@ -74,7 +42,7 @@ export async function askGemini(query: string, systemPromt: string): Promise<str
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": API_KEY,
+      "x-goog-api-key": key,
     },
     body: JSON.stringify({
       system_instruction: {
@@ -96,13 +64,9 @@ export async function askGemini(query: string, systemPromt: string): Promise<str
   if (!response.ok) {
     const errorBody = await response.json();
     if (response.status === 503) {
-      throw new Gemini503Error(
-        `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-      );
+      throw new GeminiError(503, response.statusText, errorBody,);
     }
-    throw new Error(
-      `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-    );
+    throw new GeminiError(response.status, response.statusText,errorBody);
   }
 
   const data = await response.json();
@@ -115,52 +79,15 @@ export async function askGemini(query: string, systemPromt: string): Promise<str
   }
 }
 
-export async function askGeminiImage(query: string): Promise<any> {
-  const API_KEY = GEMINI_API_KEY;
-  const API_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
+export class GeminiError extends Error {
+  status: number;
+  statusText: string;
+  body: any;
 
-  if (!API_KEY) {
-    throw new Error("GEMINI_API_KEY environment variable is not set.");
+  constructor(status: number, statusText: string, body: any) {
+    super();
+    this.status = status;
+    this.statusText = statusText;
+    this.body = body;
   }
-
-  const response = await fetch(`${API_URL}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": API_KEY,
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: query }],
-      }],
-      generationConfig: {
-        thinkingConfig: {
-          thinkingBudget: 0,
-        },
-        imageConfig: {
-          aspectRatio: "1:1"
-
-        }
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.json();
-    if (response.status === 503) {
-      throw new Gemini503Error(
-        `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-      );
-    }
-    throw new Error(
-      `Gemini API error: ${response.status} - ${JSON.stringify(errorBody)}`,
-    );
-  }
-
-  const data = await response.json();
-  return data;
-}
-
-class Gemini503Error extends Error {
 }

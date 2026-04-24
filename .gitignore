@@ -1,3 +1,8 @@
 ask.exe
+ask-windows-install.exe
+ask-windows-uninstall.exe
 src/key.ts
 outdir
+dev-data
+dev-data/
+releases/
